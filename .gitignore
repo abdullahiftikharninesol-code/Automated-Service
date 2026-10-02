@@ -1,0 +1,34 @@
+# Environment
+.env
+.env.local
+.env.*
+!.env.example
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# Node / Next
+node_modules/
+.next/
+coverage/
+
+# Local tools
+.tools/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Local DB files
+*.db
+*.sqlite
+*.sqlite3
