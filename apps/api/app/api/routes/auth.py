@@ -1,6 +1,8 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Request, status
 
 from app.api.dependencies import CurrentUser, DbSession
+from app.core.config import get_settings
+from app.core.rate_limit import limiter
 from app.schemas.auth import AuthResponse, LoginRequest, RegisterRequest, UserResponse
 from app.services.auth import AuthenticationError, AuthService
 
@@ -8,7 +10,8 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
 @router.post("/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
-def register(payload: RegisterRequest, db: DbSession) -> AuthResponse:
+@limiter.limit(lambda: get_settings().auth_register_rate_limit)
+def register(request: Request, payload: RegisterRequest, db: DbSession) -> AuthResponse:
     try:
         return AuthService(db).register(payload)
     except ValueError as exc:
@@ -17,7 +20,8 @@ def register(payload: RegisterRequest, db: DbSession) -> AuthResponse:
 
 
 @router.post("/login", response_model=AuthResponse)
-def login(payload: LoginRequest, db: DbSession) -> AuthResponse:
+@limiter.limit(lambda: get_settings().auth_login_rate_limit)
+def login(request: Request, payload: LoginRequest, db: DbSession) -> AuthResponse:
     try:
         return AuthService(db).login(str(payload.email), payload.password)
     except AuthenticationError as exc:

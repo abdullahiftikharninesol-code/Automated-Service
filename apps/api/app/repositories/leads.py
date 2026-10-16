@@ -39,7 +39,13 @@ class LeadRepository:
                     Lead.customer_name.ilike(term),
                     Lead.customer_email.ilike(term),
                     Lead.customer_phone.ilike(term),
+                    Lead.customer_phone_normalized.ilike(term),
                     Lead.service_type.ilike(term),
+                    Lead.category_or_service.ilike(term),
+                    Lead.product_name.ilike(term),
+                    Lead.product_variant.ilike(term),
+                    Lead.location.ilike(term),
+                    Lead.message.ilike(term),
                 )
             )
         if status:

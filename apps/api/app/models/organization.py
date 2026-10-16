@@ -15,6 +15,8 @@ class Organization(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         Enum(BusinessType), default=BusinessType.GENERAL
     )
     timezone: Mapped[str] = mapped_column(String(80), default="America/New_York")
+    default_phone_region: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    inbound_webhook_secret: Mapped[str | None] = mapped_column(String(255), nullable=True)
     duplicate_window_minutes: Mapped[int] = mapped_column(Integer, default=60)
     followup_new_lead_minutes: Mapped[int] = mapped_column(Integer, default=30)
     followup_second_reminder_hours: Mapped[int] = mapped_column(Integer, default=2)
@@ -25,4 +27,13 @@ class Organization(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     leads = relationship("Lead", back_populates="organization", cascade="all, delete-orphan")
     inbound_messages = relationship(
         "InboundMessage", back_populates="organization", cascade="all, delete-orphan"
+    )
+    customers = relationship(
+        "Customer", back_populates="organization", cascade="all, delete-orphan"
+    )
+    conversations = relationship(
+        "Conversation", back_populates="organization", cascade="all, delete-orphan"
+    )
+    conversation_messages = relationship(
+        "ConversationMessage", back_populates="organization", cascade="all, delete-orphan"
     )

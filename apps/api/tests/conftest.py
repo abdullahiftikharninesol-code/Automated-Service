@@ -8,7 +8,19 @@ from sqlalchemy.pool import StaticPool
 
 from app import models  # noqa: F401
 from app.core.database import Base, get_db
+from app.core.rate_limit import limiter
 from app.main import app
+
+
+@pytest.fixture(autouse=True)
+def disable_limiter_by_default() -> Generator[None, None, None]:
+    limiter.enabled = False
+    limiter.reset()
+    try:
+        yield
+    finally:
+        limiter.reset()
+        limiter.enabled = False
 
 
 @pytest.fixture

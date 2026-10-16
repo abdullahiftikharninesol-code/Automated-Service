@@ -66,6 +66,7 @@ class LeadResponse(ORMModel):
     customer_name: str
     customer_email: EmailStr | None
     customer_phone: str | None
+    customer_phone_normalized: str | None = None
     intent: str | None
     category_or_service: str | None
     service_type: str | None
@@ -90,6 +91,8 @@ class LeadResponse(ORMModel):
     next_followup_at: datetime | None
     booked_at: datetime | None
     lost_at: datetime | None
+    customer_id: uuid.UUID | None = None
+    primary_conversation_id: uuid.UUID | None = None
 
 
 class LeadListResponse(BaseModel):

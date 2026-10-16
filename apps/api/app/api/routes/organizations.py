@@ -1,3 +1,4 @@
+import secrets
 import uuid
 
 from fastapi import APIRouter, HTTPException
@@ -8,6 +9,7 @@ from app.schemas.organization import (
     OrganizationIntegrationResponse,
     OrganizationResponse,
     OrganizationUpdate,
+    WebhookSecretRotateResponse,
 )
 from app.services.email import email_provider_status
 
@@ -63,4 +65,23 @@ def integration_info(
         ),
         email_provider=provider,
         email_configured=configured,
+        webhook_secret_configured=bool(organization.inbound_webhook_secret),
     )
+
+
+@router.post(
+    "/{organization_id}/rotate-webhook-secret",
+    response_model=WebhookSecretRotateResponse,
+)
+def rotate_webhook_secret(
+    organization_id: uuid.UUID,
+    db: DbSession,
+    organization: CurrentOrganization,
+) -> WebhookSecretRotateResponse:
+    if organization_id != organization.id:
+        raise HTTPException(status_code=404, detail="Organization not found")
+    new_secret = f"whsec_{secrets.token_urlsafe(32)}"
+    organization.inbound_webhook_secret = new_secret
+    db.commit()
+    db.refresh(organization)
+    return WebhookSecretRotateResponse(webhook_secret=new_secret)

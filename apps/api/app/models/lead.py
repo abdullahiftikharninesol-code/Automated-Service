@@ -27,6 +27,7 @@ class Lead(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     __table_args__ = (
         Index("ix_leads_org_status_created", "organization_id", "status", "created_at"),
         Index("ix_leads_org_followup", "organization_id", "next_followup_at"),
+        Index("ix_leads_org_phone_norm", "organization_id", "customer_phone_normalized"),
     )
 
     organization_id: Mapped[uuid.UUID] = mapped_column(
@@ -35,6 +36,9 @@ class Lead(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     customer_name: Mapped[str] = mapped_column(String(160))
     customer_email: Mapped[str | None] = mapped_column(String(320), nullable=True)
     customer_phone: Mapped[str | None] = mapped_column(String(60), nullable=True)
+    customer_phone_normalized: Mapped[str | None] = mapped_column(
+        String(60), nullable=True, index=True
+    )
     intent: Mapped[str | None] = mapped_column(String(80), nullable=True)
     category_or_service: Mapped[str | None] = mapped_column(String(160), nullable=True)
     service_type: Mapped[str | None] = mapped_column(String(160), nullable=True)
@@ -56,8 +60,27 @@ class Lead(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     next_followup_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     booked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     lost_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    customer_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("customers.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    primary_conversation_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("conversations.id", ondelete="SET NULL", use_alter=True),
+        nullable=True,
+        index=True,
+    )
 
     organization = relationship("Organization", back_populates="leads")
+    customer = relationship("Customer", back_populates="leads")
+    primary_conversation = relationship(
+        "Conversation", foreign_keys=[primary_conversation_id], post_update=True
+    )
+    conversations = relationship(
+        "Conversation", foreign_keys="Conversation.lead_id", back_populates="lead"
+    )
     events = relationship("LeadEvent", back_populates="lead", cascade="all, delete-orphan")
     followups = relationship("FollowUp", back_populates="lead", cascade="all, delete-orphan")
     inbound_messages = relationship(

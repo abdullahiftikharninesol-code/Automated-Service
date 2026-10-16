@@ -15,6 +15,11 @@ class InboundMessage(UUIDPrimaryKeyMixin, Base):
     __table_args__ = (
         Index("ix_inbound_messages_org_received", "organization_id", "received_at"),
         Index("ix_inbound_messages_org_lead", "organization_id", "lead_id"),
+        Index(
+            "ix_inbound_messages_org_phone_norm",
+            "organization_id",
+            "customer_phone_normalized",
+        ),
         UniqueConstraint(
             "organization_id",
             "channel",
@@ -34,6 +39,9 @@ class InboundMessage(UUIDPrimaryKeyMixin, Base):
     customer_name: Mapped[str] = mapped_column(String(160))
     customer_email: Mapped[str | None] = mapped_column(String(320), nullable=True)
     customer_phone: Mapped[str | None] = mapped_column(String(60), nullable=True)
+    customer_phone_normalized: Mapped[str | None] = mapped_column(
+        String(60), nullable=True, index=True
+    )
     message_text: Mapped[str] = mapped_column(Text)
     inbound_metadata: Mapped[dict[str, Any]] = mapped_column("metadata", JSON, default=dict)
     received_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

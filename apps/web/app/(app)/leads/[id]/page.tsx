@@ -65,6 +65,8 @@ export default function LeadDetailsPage() {
               <Detail label="Phone" value={lead.customer_phone} link={lead.customer_phone ? `tel:${lead.customer_phone}` : undefined} />
               <Detail label="Email" value={lead.customer_email} link={lead.customer_email ? `mailto:${lead.customer_email}` : undefined} />
               <Detail label="Location" value={lead.location} /><Detail label="Preferred" value={preferred} />
+              {lead.customer_id && <Detail label="Customer ID" value={lead.customer_id.slice(0, 8) + "…"} />}
+              {lead.primary_conversation_id && <Detail label="Conversation" value={lead.primary_conversation_id.slice(0, 8) + "…"} />}
             </div>
           </Section>
           <Section title="Customer messages">

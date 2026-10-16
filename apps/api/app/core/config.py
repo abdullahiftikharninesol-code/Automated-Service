@@ -24,6 +24,12 @@ class Settings(BaseSettings):
     followup_second_reminder_hours: int = Field(default=2, ge=1)
     followup_contacted_hours: int = Field(default=24, ge=1)
     followup_final_days: int = Field(default=3, ge=1)
+    rate_limit_enabled: bool = True
+    auth_login_rate_limit: str = "10/minute"
+    auth_register_rate_limit: str = "5/minute"
+    public_inbound_rate_limit: str = "30/minute"
+    webhook_signature_required: bool = False
+    email_timeout_seconds: float = 5.0
 
     model_config = SettingsConfigDict(
         env_file=(".env", "../../.env"),

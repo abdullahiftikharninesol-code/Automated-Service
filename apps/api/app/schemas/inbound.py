@@ -62,6 +62,7 @@ class InboundMessageResponse(ORMModel):
     customer_name: str
     customer_email: EmailStr | None
     customer_phone: str | None
+    customer_phone_normalized: str | None = None
     message_text: str
     metadata: dict[str, Any] = Field(validation_alias="inbound_metadata")
     received_at: datetime

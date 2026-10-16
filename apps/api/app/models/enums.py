@@ -32,6 +32,44 @@ class InboundChannel(StrEnum):
     PHONE = "PHONE"
     MANUAL = "MANUAL"
     CHAT_WIDGET = "CHAT_WIDGET"
+    INSTAGRAM = "INSTAGRAM"
+    FACEBOOK = "FACEBOOK"
+
+
+Channel = InboundChannel
+
+
+class ConversationStatus(StrEnum):
+    OPEN = "OPEN"
+    CLOSED = "CLOSED"
+    ARCHIVED = "ARCHIVED"
+
+
+class WaitingOn(StrEnum):
+    OWNER = "OWNER"
+    CUSTOMER = "CUSTOMER"
+    SYSTEM = "SYSTEM"
+    NONE = "NONE"
+
+
+class MessageDirection(StrEnum):
+    INBOUND = "INBOUND"
+    OUTBOUND = "OUTBOUND"
+
+
+class MessageSenderType(StrEnum):
+    CUSTOMER = "CUSTOMER"
+    OWNER = "OWNER"
+    SYSTEM = "SYSTEM"
+    AI = "AI"
+
+
+class MessageDeliveryStatus(StrEnum):
+    PENDING = "PENDING"
+    SENT = "SENT"
+    DELIVERED = "DELIVERED"
+    READ = "READ"
+    FAILED = "FAILED"
 
 
 class BusinessType(StrEnum):

@@ -10,6 +10,8 @@ pwdlib[argon2]==0.3.0
 email-validator==2.3.0
 openai==2.3.0
 python-multipart==0.0.20
+phonenumbers==9.0.41
+slowapi==0.1.10
 
 # Development and tests
 pytest==8.4.2

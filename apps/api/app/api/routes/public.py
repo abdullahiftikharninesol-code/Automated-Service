@@ -1,9 +1,14 @@
+import hashlib
+import hmac
+import json
 import uuid
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Request, status
 
 from app.ai import get_ai_provider
 from app.api.dependencies import DbSession
+from app.core.config import get_settings
+from app.core.rate_limit import limiter
 from app.models.enums import InboundChannel
 from app.models.organization import Organization
 from app.schemas.inbound import (
@@ -36,9 +41,59 @@ def public_organization(organization_id: uuid.UUID, db: DbSession) -> dict[str, 
     response_model=InboundProcessResponse,
     status_code=status.HTTP_201_CREATED,
 )
-def inbound_webhook(
-    organization_id: uuid.UUID, payload: WebsiteWebhookCreate, db: DbSession
+@limiter.limit(lambda: get_settings().public_inbound_rate_limit)
+async def inbound_webhook(
+    request: Request, organization_id: uuid.UUID, db: DbSession
 ) -> InboundProcessResponse:
+    organization = db.get(Organization, organization_id)
+    if not organization:
+        raise HTTPException(status_code=404, detail="Organization not found")
+
+    raw_body = await request.body()
+    settings = get_settings()
+    requires_signature = settings.webhook_signature_required or bool(
+        organization.inbound_webhook_secret
+    )
+
+    if requires_signature:
+        if not organization.inbound_webhook_secret:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Webhook signature required but organization has no secret configured",
+            )
+        signature_header = request.headers.get("X-Missed-Lead-Signature")
+        if not signature_header:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Missing X-Missed-Lead-Signature header",
+            )
+        if signature_header.startswith("sha256="):
+            provided_sig = signature_header.split("sha256=", 1)[1].strip()
+        else:
+            provided_sig = signature_header.strip()
+
+        expected_sig = hmac.new(
+            organization.inbound_webhook_secret.encode("utf-8"),
+            raw_body,
+            hashlib.sha256,
+        ).hexdigest()
+
+        if not hmac.compare_digest(provided_sig, expected_sig):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid webhook signature",
+            )
+
+    try:
+        decoded = raw_body.decode("utf-8") if isinstance(raw_body, bytes) else raw_body
+        payload_data = json.loads(decoded)
+        payload = WebsiteWebhookCreate.model_validate(payload_data)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Invalid webhook JSON payload: {exc}",
+        ) from exc
+
     return _process_website_payload(organization_id, payload, InboundChannel.WEBSITE_WEBHOOK, db)
 
 
@@ -47,8 +102,12 @@ def inbound_webhook(
     response_model=InboundProcessResponse,
     status_code=status.HTTP_201_CREATED,
 )
+@limiter.limit(lambda: get_settings().public_inbound_rate_limit)
 def inbound_form(
-    organization_id: uuid.UUID, payload: WebsiteWebhookCreate, db: DbSession
+    request: Request,
+    organization_id: uuid.UUID,
+    payload: WebsiteWebhookCreate,
+    db: DbSession,
 ) -> InboundProcessResponse:
     return _process_website_payload(organization_id, payload, InboundChannel.WEBSITE_FORM, db)
 
@@ -58,8 +117,12 @@ def inbound_form(
     response_model=PublicInquiryResponse,
     status_code=status.HTTP_201_CREATED,
 )
+@limiter.limit(lambda: get_settings().public_inbound_rate_limit)
 def create_public_inquiry(
-    organization_id: uuid.UUID, payload: PublicInquiryCreate, db: DbSession
+    request: Request,
+    organization_id: uuid.UUID,
+    payload: PublicInquiryCreate,
+    db: DbSession,
 ) -> PublicInquiryResponse:
     result = _process(
         organization_id,

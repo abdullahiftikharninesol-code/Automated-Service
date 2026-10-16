@@ -14,6 +14,7 @@ class OrganizationResponse(ORMModel):
     business_type: BusinessType
     timezone: str
     duplicate_window_minutes: int
+    default_phone_region: str | None = None
     followup_new_lead_minutes: int
     followup_second_reminder_hours: int
     followup_contacted_hours: int
@@ -27,6 +28,7 @@ class OrganizationUpdate(ORMModel):
     industry: str | None = Field(default=None, min_length=2, max_length=80)
     business_type: BusinessType | None = None
     timezone: str | None = Field(default=None, min_length=3, max_length=80)
+    default_phone_region: str | None = Field(default=None, max_length=10)
     duplicate_window_minutes: int | None = Field(default=None, ge=1, le=10080)
     followup_new_lead_minutes: int | None = Field(default=None, ge=1, le=1440)
     followup_second_reminder_hours: int | None = Field(default=None, ge=1, le=168)
@@ -40,3 +42,8 @@ class OrganizationIntegrationResponse(ORMModel):
     embed_code: str
     email_provider: str
     email_configured: bool
+    webhook_secret_configured: bool = False
+
+
+class WebhookSecretRotateResponse(ORMModel):
+    webhook_secret: str

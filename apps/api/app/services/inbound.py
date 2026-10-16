@@ -7,13 +7,24 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.ai.base import AIProvider
-from app.models.enums import InboundChannel, LeadEventType, LeadSource, LeadStatus, Urgency
+from app.models.conversation import Conversation
+from app.models.enums import (
+    InboundChannel,
+    LeadEventType,
+    LeadSource,
+    LeadStatus,
+    MessageDeliveryStatus,
+    MessageSenderType,
+    Urgency,
+)
 from app.models.inbound_message import InboundMessage
 from app.models.lead import Lead
 from app.models.lead_event import LeadEvent
 from app.models.organization import Organization
 from app.schemas.ai import LeadExtractionResult
 from app.schemas.inbound import InboundMessageCreate
+from app.services.conversation import ConversationService
+from app.services.customer import CustomerService
 from app.services.email import EmailProvider
 from app.services.followups import FollowUpService
 
@@ -55,6 +66,8 @@ class InboundLeadService:
         self.ai = ai
         self.email = email
         self.followups = FollowUpService(db)
+        self.customers = CustomerService(db)
+        self.conversations = ConversationService(db)
 
     def process(
         self, organization_id: uuid.UUID, payload: InboundMessageCreate
@@ -67,14 +80,23 @@ class InboundLeadService:
         if existing and existing.lead:
             return InboundProcessingResult(existing.lead, existing, created=False)
 
-        email = str(payload.customer_email).lower() if payload.customer_email else None
+        customer = self.customers.find_or_create(
+            organization_id=organization.id,
+            name=payload.customer_name,
+            email=str(payload.customer_email) if payload.customer_email else None,
+            phone=payload.customer_phone,
+            default_region=organization.default_phone_region,
+            metadata=payload.metadata,
+        )
+
         message = InboundMessage(
             organization_id=organization.id,
             channel=payload.channel,
             external_message_id=payload.external_message_id,
-            customer_name=payload.customer_name.strip(),
-            customer_email=email,
-            customer_phone=payload.customer_phone.strip() if payload.customer_phone else None,
+            customer_name=customer.name or payload.customer_name.strip(),
+            customer_email=customer.email,
+            customer_phone=customer.phone,
+            customer_phone_normalized=customer.phone_normalized,
             message_text=payload.message_text.strip(),
             inbound_metadata=payload.metadata,
         )
@@ -87,10 +109,35 @@ class InboundLeadService:
         )
         lead = self._find_open_lead(organization, message)
         created = lead is None
+
+        conversation, _ = self.conversations.get_or_create_open_conversation(
+            organization_id=organization.id,
+            customer_id=customer.id,
+            channel=payload.channel,
+            lead_id=lead.id if lead else None,
+        )
+        self.conversations.append_inbound_message(
+            organization_id=organization.id,
+            conversation_id=conversation.id,
+            body=message.message_text,
+            channel=payload.channel,
+            external_message_id=payload.external_message_id,
+            metadata=payload.metadata,
+            received_at=message.received_at,
+        )
+
         if created:
             lead = self._create_lead(organization, message, payload, extraction)
+            lead.customer_id = customer.id
+            lead.primary_conversation_id = conversation.id
+            conversation.lead_id = lead.id
         else:
             self._enrich_lead(lead, message, payload, extraction)
+            if not lead.customer_id:
+                lead.customer_id = customer.id
+            if not lead.primary_conversation_id:
+                lead.primary_conversation_id = conversation.id
+            conversation.lead_id = lead.id
 
         message.lead_id = lead.id
         message.processed_at = datetime.now(UTC)
@@ -115,10 +162,16 @@ class InboundLeadService:
         if created:
             self.followups.schedule_for_new_lead(lead, organization)
 
-        self._acknowledge(organization, lead, extraction)
+        # Commit inquiry and lead FIRST so core lead creation is guaranteed
         self.db.commit()
         self.db.refresh(lead)
         self.db.refresh(message)
+        self.db.refresh(conversation)
+
+        # Dispatch acknowledgement email (failures are logged/recorded without failing lead)
+        self._acknowledge(organization, lead, extraction, conversation=conversation)
+        self.db.commit()
+        self.db.refresh(lead)
         return InboundProcessingResult(lead, message, created=created)
 
     def messages(self, lead: Lead) -> list[InboundMessage]:
@@ -153,7 +206,11 @@ class InboundLeadService:
             contact_filters.append(
                 func.lower(InboundMessage.customer_email) == message.customer_email.lower()
             )
-        if message.customer_phone:
+        if message.customer_phone_normalized:
+            contact_filters.append(
+                InboundMessage.customer_phone_normalized == message.customer_phone_normalized
+            )
+        elif message.customer_phone:
             contact_filters.append(InboundMessage.customer_phone == message.customer_phone)
         if not contact_filters:
             return None
@@ -176,7 +233,11 @@ class InboundLeadService:
         legacy_filters = []
         if message.customer_email:
             legacy_filters.append(func.lower(Lead.customer_email) == message.customer_email.lower())
-        if message.customer_phone:
+        if message.customer_phone_normalized:
+            legacy_filters.append(
+                Lead.customer_phone_normalized == message.customer_phone_normalized
+            )
+        elif message.customer_phone:
             legacy_filters.append(Lead.customer_phone == message.customer_phone)
         return self.db.scalar(
             select(Lead)
@@ -203,6 +264,7 @@ class InboundLeadService:
             customer_name=message.customer_name,
             customer_email=message.customer_email,
             customer_phone=message.customer_phone,
+            customer_phone_normalized=message.customer_phone_normalized,
             intent=extraction.intent,
             category_or_service=category,
             service_type=category or extraction.product_name,
@@ -234,6 +296,9 @@ class InboundLeadService:
     ) -> None:
         lead.customer_email = lead.customer_email or message.customer_email
         lead.customer_phone = lead.customer_phone or message.customer_phone
+        lead.customer_phone_normalized = (
+            lead.customer_phone_normalized or message.customer_phone_normalized
+        )
         lead.intent = lead.intent or extraction.intent
         lead.category_or_service = (
             lead.category_or_service
@@ -270,6 +335,7 @@ class InboundLeadService:
         organization: Organization,
         lead: Lead,
         extraction: LeadExtractionResult,
+        conversation: Conversation | None = None,
     ) -> None:
         acknowledgement = self.ai.generate_acknowledgement(
             customer_name=lead.customer_name,
@@ -290,6 +356,16 @@ class InboundLeadService:
                 LeadEventType.ACKNOWLEDGEMENT_FAILED,
                 {"channel": "EMAIL", "error_type": "EmailProviderNotConfigured"},
             )
+            if conversation:
+                self.conversations.append_outbound_message(
+                    organization_id=organization.id,
+                    conversation_id=conversation.id,
+                    body=acknowledgement,
+                    channel=InboundChannel.EMAIL,
+                    sender_type=MessageSenderType.SYSTEM,
+                    delivery_status=MessageDeliveryStatus.FAILED,
+                    metadata={"error_type": "EmailProviderNotConfigured"},
+                )
             return
         try:
             self.email.send(
@@ -304,8 +380,27 @@ class InboundLeadService:
                 LeadEventType.ACKNOWLEDGEMENT_FAILED,
                 {"channel": "EMAIL", "error_type": type(exc).__name__},
             )
+            if conversation:
+                self.conversations.append_outbound_message(
+                    organization_id=organization.id,
+                    conversation_id=conversation.id,
+                    body=acknowledgement,
+                    channel=InboundChannel.EMAIL,
+                    sender_type=MessageSenderType.SYSTEM,
+                    delivery_status=MessageDeliveryStatus.FAILED,
+                    metadata={"error_type": type(exc).__name__},
+                )
         else:
             self._event(lead, LeadEventType.ACKNOWLEDGEMENT_SENT, {"channel": "EMAIL"})
+            if conversation:
+                self.conversations.append_outbound_message(
+                    organization_id=organization.id,
+                    conversation_id=conversation.id,
+                    body=acknowledgement,
+                    channel=InboundChannel.EMAIL,
+                    sender_type=MessageSenderType.SYSTEM,
+                    delivery_status=MessageDeliveryStatus.SENT,
+                )
 
     def _event(
         self, lead: Lead, event_type: LeadEventType, metadata: dict[str, object]
