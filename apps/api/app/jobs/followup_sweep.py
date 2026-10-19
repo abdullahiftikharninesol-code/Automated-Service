@@ -7,7 +7,12 @@ from app.services.followups import FollowUpService
 
 
 class FollowUpSweepJob:
-    def __init__(self, db: Session, organization_id: uuid.UUID, now: datetime | None = None):
+    def __init__(
+        self,
+        db: Session,
+        organization_id: uuid.UUID | None = None,
+        now: datetime | None = None,
+    ):
         self.db = db
         self.organization_id = organization_id
         self.now = now

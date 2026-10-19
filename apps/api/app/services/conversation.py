@@ -168,6 +168,15 @@ class ConversationService:
         conv.last_outbound_at = now
         conv.waiting_on = WaitingOn.CUSTOMER
         self.db.flush()
+
+        if sender_type == MessageSenderType.OWNER:
+            from app.services.followups import FollowUpService
+
+            FollowUpService(self.db).cancel_pending_owner_reminders(
+                conversation_id=conversation_id,
+                organization_id=organization_id,
+            )
+
         return msg
 
     def get(self, organization_id: uuid.UUID, conversation_id: uuid.UUID) -> Conversation | None:

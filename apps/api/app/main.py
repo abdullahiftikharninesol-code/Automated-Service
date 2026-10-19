@@ -1,4 +1,5 @@
 import logging
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -17,14 +18,31 @@ from app.api.routes import (
 )
 from app.core.config import get_settings
 from app.core.rate_limit import limiter, rate_limit_exceeded_handler
+from app.jobs import scheduler
 
 settings = get_settings()
 logging.basicConfig(level=logging.INFO)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: Start background scheduler if enabled
+    current_settings = get_settings()
+    if current_settings.background_jobs_enabled:
+        scheduler.start()
+    try:
+        yield
+    finally:
+        # Shutdown: Stop background scheduler cleanly
+        if scheduler.is_running:
+            await scheduler.stop()
+
 
 app = FastAPI(
     title=settings.app_name,
     version="0.1.0",
     description="Simple, tenant-safe lead follow-up for small HVAC businesses.",
+    lifespan=lifespan,
 )
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)

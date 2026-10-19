@@ -30,6 +30,14 @@ class Settings(BaseSettings):
     public_inbound_rate_limit: str = "30/minute"
     webhook_signature_required: bool = False
     email_timeout_seconds: float = 5.0
+    background_jobs_enabled: bool = True
+    reminder_sweep_interval_seconds: int = Field(default=60, ge=1)
+    default_owner_reminder_delay_minutes: int = Field(default=60, ge=1)
+    default_owner_reminder_repeat_minutes: int = Field(default=60, ge=1)
+    default_owner_reminder_max_attempts: int = Field(default=3, ge=1)
+    job_max_retries: int = Field(default=3, ge=1)
+    job_retry_delay_seconds: int = Field(default=300, ge=1)
+    job_processing_timeout_minutes: int = Field(default=10, ge=1)
 
     model_config = SettingsConfigDict(
         env_file=(".env", "../../.env"),

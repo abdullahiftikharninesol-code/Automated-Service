@@ -19,6 +19,9 @@ class OrganizationResponse(ORMModel):
     followup_second_reminder_hours: int
     followup_contacted_hours: int
     followup_final_days: int
+    owner_reminder_delay_minutes: int = 60
+    owner_reminder_repeat_minutes: int = 60
+    owner_reminder_max_attempts: int = 3
     created_at: datetime
     updated_at: datetime
 
@@ -34,6 +37,9 @@ class OrganizationUpdate(ORMModel):
     followup_second_reminder_hours: int | None = Field(default=None, ge=1, le=168)
     followup_contacted_hours: int | None = Field(default=None, ge=1, le=720)
     followup_final_days: int | None = Field(default=None, ge=1, le=90)
+    owner_reminder_delay_minutes: int | None = Field(default=None, ge=1, le=10080)
+    owner_reminder_repeat_minutes: int | None = Field(default=None, ge=1, le=10080)
+    owner_reminder_max_attempts: int | None = Field(default=None, ge=1, le=50)
 
 
 class OrganizationIntegrationResponse(ORMModel):

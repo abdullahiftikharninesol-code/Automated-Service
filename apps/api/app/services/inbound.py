@@ -16,6 +16,7 @@ from app.models.enums import (
     MessageDeliveryStatus,
     MessageSenderType,
     Urgency,
+    WaitingOn,
 )
 from app.models.inbound_message import InboundMessage
 from app.models.lead import Lead
@@ -161,6 +162,18 @@ class InboundLeadService:
         )
         if created:
             self.followups.schedule_for_new_lead(lead, organization)
+
+        if (
+            conversation
+            and payload.channel != InboundChannel.MANUAL
+            and conversation.waiting_on == WaitingOn.OWNER
+        ):
+            self.followups.schedule_owner_response_reminder(
+                conversation=conversation,
+                lead=lead,
+                organization=organization,
+                now=message.received_at,
+            )
 
         # Commit inquiry and lead FIRST so core lead creation is guaranteed
         self.db.commit()

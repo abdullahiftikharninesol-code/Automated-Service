@@ -22,6 +22,9 @@ class Organization(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     followup_second_reminder_hours: Mapped[int] = mapped_column(Integer, default=2)
     followup_contacted_hours: Mapped[int] = mapped_column(Integer, default=24)
     followup_final_days: Mapped[int] = mapped_column(Integer, default=3)
+    owner_reminder_delay_minutes: Mapped[int] = mapped_column(Integer, default=60)
+    owner_reminder_repeat_minutes: Mapped[int] = mapped_column(Integer, default=60)
+    owner_reminder_max_attempts: Mapped[int] = mapped_column(Integer, default=3)
 
     users = relationship("User", back_populates="organization", cascade="all, delete-orphan")
     leads = relationship("Lead", back_populates="organization", cascade="all, delete-orphan")

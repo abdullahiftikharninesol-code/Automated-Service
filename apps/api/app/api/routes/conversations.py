@@ -5,10 +5,11 @@ import uuid
 from fastapi import APIRouter, HTTPException, Query
 
 from app.api.dependencies import CurrentOrganization, DbSession
-from app.models.enums import ConversationStatus, InboundChannel, WaitingOn
+from app.models.enums import ConversationStatus, InboundChannel, MessageSenderType, WaitingOn
 from app.schemas.conversation import (
     ConversationDetailResponse,
     ConversationListResponse,
+    ConversationMessageCreate,
     ConversationMessageResponse,
     ConversationResponse,
 )
@@ -91,3 +92,30 @@ def get_conversation_messages(
         raise HTTPException(status_code=404, detail="Conversation not found")
     messages = service.messages(organization.id, conversation_id)
     return [ConversationMessageResponse.model_validate(m) for m in messages]
+
+
+@router.post(
+    "/{conversation_id}/messages",
+    response_model=ConversationMessageResponse,
+    status_code=201,
+)
+def send_conversation_message(
+    conversation_id: uuid.UUID,
+    payload: ConversationMessageCreate,
+    db: DbSession,
+    organization: CurrentOrganization,
+) -> ConversationMessageResponse:
+    service = ConversationService(db)
+    conv = service.get(organization.id, conversation_id)
+    if not conv:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    msg = service.append_outbound_message(
+        organization_id=organization.id,
+        conversation_id=conversation_id,
+        body=payload.body,
+        channel=payload.channel or conv.channel,
+        sender_type=MessageSenderType.OWNER,
+    )
+    db.commit()
+    db.refresh(msg)
+    return ConversationMessageResponse.model_validate(msg)

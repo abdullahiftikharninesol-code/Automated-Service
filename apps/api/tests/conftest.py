@@ -23,6 +23,13 @@ def disable_limiter_by_default() -> Generator[None, None, None]:
         limiter.enabled = False
 
 
+@pytest.fixture(autouse=True)
+def disable_background_jobs_by_default(monkeypatch: pytest.MonkeyPatch) -> None:
+    from app.core.config import get_settings
+
+    monkeypatch.setattr(get_settings(), "background_jobs_enabled", False)
+
+
 @pytest.fixture
 def db() -> Generator[Session, None, None]:
     engine = create_engine(

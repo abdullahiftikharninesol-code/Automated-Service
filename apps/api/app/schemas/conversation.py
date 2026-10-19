@@ -18,6 +18,11 @@ from app.schemas.auth import ORMModel
 from app.schemas.customer import CustomerResponse
 
 
+class ConversationMessageCreate(BaseModel):
+    body: str = Field(min_length=1)
+    channel: InboundChannel | None = None
+
+
 class ConversationMessageResponse(ORMModel):
     id: uuid.UUID
     organization_id: uuid.UUID
