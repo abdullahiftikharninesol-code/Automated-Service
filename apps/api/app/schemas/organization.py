@@ -22,6 +22,10 @@ class OrganizationResponse(ORMModel):
     owner_reminder_delay_minutes: int = 60
     owner_reminder_repeat_minutes: int = 60
     owner_reminder_max_attempts: int = 3
+    whatsapp_enabled: bool = False
+    whatsapp_phone_number_id: str | None = None
+    whatsapp_business_account_id: str | None = None
+    whatsapp_display_phone_number: str | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -40,6 +44,10 @@ class OrganizationUpdate(ORMModel):
     owner_reminder_delay_minutes: int | None = Field(default=None, ge=1, le=10080)
     owner_reminder_repeat_minutes: int | None = Field(default=None, ge=1, le=10080)
     owner_reminder_max_attempts: int | None = Field(default=None, ge=1, le=50)
+    whatsapp_enabled: bool | None = None
+    whatsapp_phone_number_id: str | None = Field(default=None, max_length=50)
+    whatsapp_business_account_id: str | None = Field(default=None, max_length=50)
+    whatsapp_display_phone_number: str | None = Field(default=None, max_length=30)
 
 
 class OrganizationIntegrationResponse(ORMModel):
@@ -49,6 +57,11 @@ class OrganizationIntegrationResponse(ORMModel):
     email_provider: str
     email_configured: bool
     webhook_secret_configured: bool = False
+    whatsapp_enabled: bool = False
+    whatsapp_configured: bool = False
+    whatsapp_phone_number_id: str | None = None
+    whatsapp_display_phone_number: str | None = None
+    whatsapp_webhook_url: str | None = None
 
 
 class WebhookSecretRotateResponse(ORMModel):

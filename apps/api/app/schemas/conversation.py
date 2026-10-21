@@ -23,6 +23,10 @@ class ConversationMessageCreate(BaseModel):
     channel: InboundChannel | None = None
 
 
+class ConversationReplyCreate(BaseModel):
+    body: str = Field(min_length=1)
+
+
 class ConversationMessageResponse(ORMModel):
     id: uuid.UUID
     organization_id: uuid.UUID

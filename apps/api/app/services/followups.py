@@ -60,7 +60,7 @@ class FollowUpService:
         now: datetime | None = None,
     ) -> FollowUp:
         """Schedule or reschedule an owner response reminder.
-        
+
         Rule: Maintain at most ONE active pending OWNER_RESPONSE_REMINDER per conversation.
         If customer sends another inbound message while one is already pending,
         update/reschedule that pending reminder from the most recent inbound time.

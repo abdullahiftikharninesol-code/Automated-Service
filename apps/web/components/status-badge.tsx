@@ -32,9 +32,32 @@ export function UrgencyBadge({ urgency }: { urgency: Urgency }) {
 }
 
 export function SourceBadge({ source }: { source: LeadSource }) {
+  const isWhatsApp = source === "WHATSAPP";
+  const badgeClass = isWhatsApp
+    ? "bg-emerald-50 text-emerald-800 ring-emerald-300 font-extrabold"
+    : "bg-violet-50 text-violet-700 ring-violet-200";
+
   return (
-    <span className="rounded-full bg-violet-50 px-2.5 py-1 text-xs font-bold text-violet-700 ring-1 ring-inset ring-violet-200">
+    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs ring-1 ring-inset ${badgeClass}`}>
+      {isWhatsApp && <span>💬</span>}
       {label(source)}
     </span>
   );
 }
+
+export function QualificationBadge({ status }: { status?: string | null }) {
+  if (!status || status === "NOT_STARTED") return null;
+  const isComplete = status === "COMPLETE";
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ring-1 ring-inset ${
+        isComplete
+          ? "bg-teal-50 text-teal-800 ring-teal-300"
+          : "bg-amber-50 text-amber-800 ring-amber-300"
+      }`}
+    >
+      {isComplete ? "✓ Qualified" : "⏳ Incomplete"}
+    </span>
+  );
+}
+

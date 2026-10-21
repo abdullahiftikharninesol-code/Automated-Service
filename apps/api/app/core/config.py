@@ -38,6 +38,16 @@ class Settings(BaseSettings):
     job_max_retries: int = Field(default=3, ge=1)
     job_retry_delay_seconds: int = Field(default=300, ge=1)
     job_processing_timeout_minutes: int = Field(default=10, ge=1)
+    meta_graph_api_version: str = "v22.0"
+    meta_app_secret: str | None = None
+    meta_whatsapp_verify_token: str = "dev-verify-token"
+    meta_whatsapp_access_token: str | None = None
+    meta_whatsapp_phone_number_id: str | None = None
+    meta_whatsapp_business_account_id: str | None = None
+    whatsapp_enabled: bool = False
+    whatsapp_http_timeout_seconds: float = 10.0
+    whatsapp_provider: str = "mock"
+    meta_webhook_rate_limit: str = "60/minute"
 
     model_config = SettingsConfigDict(
         env_file=(".env", "../../.env"),

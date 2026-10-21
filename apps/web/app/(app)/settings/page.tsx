@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 
 import { PageHeading } from "@/components/page-heading";
+import { QualificationSetup } from "@/components/qualification-setup";
 import { apiFetch } from "@/lib/api";
 import { label } from "@/lib/format";
 import type {
@@ -112,6 +113,9 @@ export default function SettingsPage() {
           </div>
         </form>
       )}
+      <div className="mt-8 space-y-5">
+        <QualificationSetup />
+      </div>
     </>
   );
 }
@@ -130,6 +134,18 @@ export function IntegrationDetails({ integration }: { integration: OrganizationI
           <p className={`text-sm font-bold ${integration.email_configured ? "text-emerald-700" : "text-amber-700"}`}>
             {label(integration.email_provider)} · {integration.email_configured ? "Configured" : "Needs configuration"}
           </p>
+        </div>
+        <div className="border-t border-slate-200 pt-4">
+          <span className="label">WhatsApp Business Cloud API</span>
+          <p className={`text-sm font-bold ${integration.whatsapp_configured ? "text-emerald-700" : "text-slate-500"}`}>
+            {integration.whatsapp_configured ? "Active · Connected" : "Not connected"}
+            {integration.whatsapp_display_phone_number ? ` (${integration.whatsapp_display_phone_number})` : ""}
+          </p>
+          {integration.whatsapp_webhook_url && (
+            <div className="mt-3">
+              <IntegrationValue label="Meta Webhook Callback URL" value={integration.whatsapp_webhook_url} />
+            </div>
+          )}
         </div>
       </div>
     </section>

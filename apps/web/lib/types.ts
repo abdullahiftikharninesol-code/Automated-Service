@@ -28,6 +28,36 @@ export type MessageDirection = "INBOUND" | "OUTBOUND";
 export type MessageSenderType = "CUSTOMER" | "OWNER" | "SYSTEM" | "AI";
 export type MessageDeliveryStatus = "PENDING" | "SENT" | "DELIVERED" | "READ" | "FAILED";
 
+export type QualificationStatus = "NOT_STARTED" | "IN_PROGRESS" | "COMPLETE";
+export type QualificationFieldType =
+  | "TEXT"
+  | "NUMBER"
+  | "BOOLEAN"
+  | "DATE"
+  | "DATETIME"
+  | "CHOICE"
+  | "MULTI_CHOICE"
+  | "PHONE"
+  | "EMAIL"
+  | "LOCATION";
+
+export interface QualificationField {
+  id: string;
+  organization_id: string;
+  key: string;
+  label: string;
+  description: string | null;
+  field_type: QualificationFieldType;
+  required: boolean;
+  enabled: boolean;
+  sort_order: number;
+  question_text: string | null;
+  options?: string[] | null;
+  example_values?: unknown[] | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface User {
   id: string;
   organization_id: string;
@@ -115,6 +145,10 @@ export interface Lead {
   next_followup_at: string | null;
   booked_at: string | null;
   lost_at: string | null;
+  qualifications?: Record<string, unknown> | null;
+  qualification_status?: QualificationStatus | null;
+  qualification_completed_at?: string | null;
+  qualification_metadata?: Record<string, unknown> | null;
 }
 
 export interface LeadEvent {
@@ -156,6 +190,11 @@ export interface InboundMessage {
   created_at: string;
 }
 
+export interface ConversationDetail extends Conversation {
+  customer: Customer | null;
+  messages: ConversationMessage[];
+}
+
 export interface OrganizationIntegration {
   inbound_webhook_url: string;
   embed_form_url: string;
@@ -163,6 +202,11 @@ export interface OrganizationIntegration {
   email_provider: string;
   email_configured: boolean;
   webhook_secret_configured?: boolean;
+  whatsapp_enabled?: boolean;
+  whatsapp_configured?: boolean;
+  whatsapp_phone_number_id?: string | null;
+  whatsapp_display_phone_number?: string | null;
+  whatsapp_webhook_url?: string;
 }
 
 export interface DashboardData {

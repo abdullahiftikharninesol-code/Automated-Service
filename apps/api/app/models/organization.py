@@ -1,4 +1,4 @@
-from sqlalchemy import Enum, Integer, String
+from sqlalchemy import Boolean, Enum, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -25,6 +25,12 @@ class Organization(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     owner_reminder_delay_minutes: Mapped[int] = mapped_column(Integer, default=60)
     owner_reminder_repeat_minutes: Mapped[int] = mapped_column(Integer, default=60)
     owner_reminder_max_attempts: Mapped[int] = mapped_column(Integer, default=3)
+    whatsapp_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    whatsapp_phone_number_id: Mapped[str | None] = mapped_column(
+        String(50), nullable=True, unique=True, index=True
+    )
+    whatsapp_business_account_id: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    whatsapp_display_phone_number: Mapped[str | None] = mapped_column(String(30), nullable=True)
 
     users = relationship("User", back_populates="organization", cascade="all, delete-orphan")
     leads = relationship("Lead", back_populates="organization", cascade="all, delete-orphan")
@@ -39,4 +45,10 @@ class Organization(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     )
     conversation_messages = relationship(
         "ConversationMessage", back_populates="organization", cascade="all, delete-orphan"
+    )
+    qualification_fields = relationship(
+        "QualificationField",
+        back_populates="organization",
+        cascade="all, delete-orphan",
+        order_by="QualificationField.sort_order",
     )

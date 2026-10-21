@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { formatDate } from "@/lib/format";
 import type { Lead } from "@/lib/types";
-import { SourceBadge, StatusBadge, UrgencyBadge } from "./status-badge";
+import { QualificationBadge, SourceBadge, StatusBadge, UrgencyBadge } from "./status-badge";
 
 export function LeadTable({ leads }: { leads: Lead[] }) {
   if (!leads.length) {
@@ -29,7 +29,12 @@ export function LeadTable({ leads }: { leads: Lead[] }) {
               <td className="text-sm text-slate-600">{formatDate(lead.created_at)}</td>
               <td className="text-sm text-slate-600">{formatDate(lead.last_contacted_at)}</td>
               <td className="text-sm text-slate-600">{formatDate(lead.next_followup_at)}</td>
-              <td><StatusBadge status={lead.status} /></td>
+              <td>
+                <div className="flex flex-col gap-1 items-start">
+                  <StatusBadge status={lead.status} />
+                  <QualificationBadge status={lead.qualification_status} />
+                </div>
+              </td>
             </tr>
           ))}
         </tbody>

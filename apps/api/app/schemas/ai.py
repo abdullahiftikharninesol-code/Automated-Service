@@ -1,6 +1,18 @@
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 from app.models.enums import Urgency
+
+
+class QualificationFieldDefinition(BaseModel):
+    key: str
+    label: str
+    field_type: str = "TEXT"
+    required: bool = True
+    description: str | None = None
+    options: list[str] | None = None
+    example_values: list[Any] | None = None
 
 
 class LeadExtractionResult(BaseModel):
@@ -15,4 +27,7 @@ class LeadExtractionResult(BaseModel):
     quantity: int | None = Field(default=None, ge=1)
     summary: str = Field(min_length=1, max_length=500)
     confidence: float = Field(ge=0, le=1)
-    additional_fields: dict[str, str | int | float | bool] = Field(default_factory=dict)
+    additional_fields: dict[str, Any] = Field(default_factory=dict)
+    # Extensible generic qualification dictionary
+    extracted_qualification_fields: dict[str, Any] = Field(default_factory=dict)
+    field_confidences: dict[str, float] = Field(default_factory=dict)

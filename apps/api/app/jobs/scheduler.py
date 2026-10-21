@@ -16,7 +16,7 @@ logger = logging.getLogger("missed_lead_rescue.scheduler")
 
 class BackgroundReminderScheduler:
     """Lightweight in-process periodic scheduler for local/single-instance deployment.
-    
+
     Database-backed: PostgreSQL determines WHAT is due, while this scheduler only determines
     WHEN to check. Uses asyncio task with clean cancellation and delegates DB execution
     to worker threads to prevent event loop blocking.

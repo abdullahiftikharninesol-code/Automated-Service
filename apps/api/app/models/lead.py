@@ -19,7 +19,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
 from app.models.base import TimestampMixin, UUIDPrimaryKeyMixin
-from app.models.enums import LeadSource, LeadStatus, Urgency
+from app.models.enums import LeadSource, LeadStatus, QualificationStatus, Urgency
 
 
 class Lead(UUIDPrimaryKeyMixin, TimestampMixin, Base):
@@ -55,6 +55,14 @@ class Lead(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     preferred_time_text: Mapped[str | None] = mapped_column(String(80), nullable=True)
     source: Mapped[LeadSource] = mapped_column(Enum(LeadSource), default=LeadSource.MANUAL)
     status: Mapped[LeadStatus] = mapped_column(Enum(LeadStatus), default=LeadStatus.NEW)
+    qualification_status: Mapped[QualificationStatus] = mapped_column(
+        Enum(QualificationStatus), default=QualificationStatus.NOT_STARTED, index=True
+    )
+    qualifications: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    qualification_completed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    qualification_metadata: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
     ai_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
     last_contacted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     next_followup_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

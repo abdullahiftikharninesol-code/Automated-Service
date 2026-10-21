@@ -26,7 +26,7 @@ class OwnerNotificationProvider(ABC):
     @abstractmethod
     def send_owner_notification(self, notification: OwnerNotification) -> bool:
         """Send owner notification.
-        
+
         Must return True on success or raise an Exception / return False on failure.
         """
         pass

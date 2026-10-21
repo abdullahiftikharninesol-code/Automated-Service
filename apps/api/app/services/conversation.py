@@ -138,6 +138,7 @@ class ConversationService:
         delivery_status: MessageDeliveryStatus = MessageDeliveryStatus.SENT,
         external_message_id: str | None = None,
         metadata: dict | None = None,
+        update_waiting_on: bool | None = None,
     ) -> ConversationMessage:
         conv = self.db.scalar(
             select(Conversation).where(
@@ -166,7 +167,18 @@ class ConversationService:
 
         conv.last_message_at = now
         conv.last_outbound_at = now
-        conv.waiting_on = WaitingOn.CUSTOMER
+
+        # Update waiting_on status
+        if update_waiting_on is False:
+            pass  # Leave waiting_on unchanged
+        elif update_waiting_on is True or sender_type == MessageSenderType.OWNER:
+            conv.waiting_on = WaitingOn.CUSTOMER
+        elif channel == InboundChannel.WHATSAPP and sender_type == MessageSenderType.SYSTEM:
+            # WhatsApp automated SYSTEM receipts leave conversation waiting on OWNER
+            pass
+        else:
+            conv.waiting_on = WaitingOn.CUSTOMER
+
         self.db.flush()
 
         if sender_type == MessageSenderType.OWNER:

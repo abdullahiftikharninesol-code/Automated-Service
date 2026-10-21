@@ -48,12 +48,8 @@ class Conversation(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     waiting_on: Mapped[WaitingOn] = mapped_column(Enum(WaitingOn), default=WaitingOn.OWNER)
     subject: Mapped[str | None] = mapped_column(String(255), nullable=True)
     external_thread_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    last_message_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
-    last_inbound_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    last_message_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_inbound_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     last_outbound_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )

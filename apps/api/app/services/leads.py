@@ -64,9 +64,7 @@ class LeadService:
         self.db.refresh(lead)
         return lead
 
-    def change_status(
-        self, lead: Lead, organization: Organization, status: LeadStatus
-    ) -> Lead:
+    def change_status(self, lead: Lead, organization: Organization, status: LeadStatus) -> Lead:
         previous = lead.status
         if previous == status:
             return lead

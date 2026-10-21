@@ -323,9 +323,7 @@ def test_webhook_hmac_lifecycle(
     lead_id_1 = res_unsigned.json()["lead_id"]
 
     # 2. Rotate secret
-    rot_res = client.post(
-        f"/organizations/{org_id}/rotate-webhook-secret", headers=auth_headers
-    )
+    rot_res = client.post(f"/organizations/{org_id}/rotate-webhook-secret", headers=auth_headers)
     assert rot_res.status_code == 200
     secret = rot_res.json()["webhook_secret"]
     assert secret.startswith("whsec_")

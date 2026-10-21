@@ -49,17 +49,11 @@ def test_due_followup_processor(
     assert result.json()["processed"] == 3
 
 
-def test_dashboard_counts_statuses(
-    client: TestClient, auth_headers: dict[str, str]
-) -> None:
+def test_dashboard_counts_statuses(client: TestClient, auth_headers: dict[str, str]) -> None:
     first = create_manual(client, auth_headers, "One")
     second = create_manual(client, auth_headers, "Two")
-    client.post(
-        f"/leads/{first['id']}/status", headers=auth_headers, json={"status": "BOOKED"}
-    )
-    client.post(
-        f"/leads/{second['id']}/status", headers=auth_headers, json={"status": "CONTACTED"}
-    )
+    client.post(f"/leads/{first['id']}/status", headers=auth_headers, json={"status": "BOOKED"})
+    client.post(f"/leads/{second['id']}/status", headers=auth_headers, json={"status": "CONTACTED"})
     counts = client.get("/dashboard", headers=auth_headers).json()["counts"]
     assert counts == {"new": 0, "needs_attention": 0, "contacted": 1, "booked": 1, "lost": 0}
 

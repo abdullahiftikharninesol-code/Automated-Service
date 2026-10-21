@@ -1,6 +1,8 @@
+from typing import Any
+
 from openai import OpenAI
 
-from app.schemas.ai import LeadExtractionResult
+from app.schemas.ai import LeadExtractionResult, QualificationFieldDefinition
 
 
 class OpenAIProvider:
@@ -9,8 +11,24 @@ class OpenAIProvider:
         self.model = model
 
     def extract_lead_information(
-        self, message: str, *, business_type: str = "GENERAL"
+        self,
+        message: str,
+        *,
+        business_type: str = "GENERAL",
+        qualification_fields: list[QualificationFieldDefinition] | None = None,
+        current_qualifications: dict[str, Any] | None = None,
     ) -> LeadExtractionResult:
+        field_instructions = ""
+        if qualification_fields:
+            fields_desc = ", ".join(
+                f"'{f.key}' ({f.label}, type={f.field_type})" for f in qualification_fields
+            )
+            field_instructions = (
+                f"\nAlso extract matching qualification fields into "
+                f"'extracted_qualification_fields': [{fields_desc}]. "
+                "Only set keys that are explicitly present or clearly inferred from the text."
+            )
+
         response = self.client.responses.parse(
             model=self.model,
             input=[
@@ -20,10 +38,10 @@ class OpenAIProvider:
                         "Extract structured facts from a customer inquiry for a business. "
                         "Use null for every missing value and never invent details. "
                         "Classify intent, category or service, product details, quantity, "
-                        "location, "
-                        "preferred timing, urgency, and a concise factual summary. "
+                        "location, preferred timing, urgency, and a concise factual summary. "
                         "Flag immediate safety hazards as EMERGENCY without giving instructions. "
                         f"The organization's optional business template is {business_type}."
+                        f"{field_instructions}"
                     ),
                 },
                 {"role": "user", "content": message},

@@ -15,6 +15,8 @@ from app.api.routes import (
     leads,
     organizations,
     public,
+    qualification,
+    webhooks_whatsapp,
 )
 from app.core.config import get_settings
 from app.core.rate_limit import limiter, rate_limit_exceeded_handler
@@ -63,6 +65,8 @@ app.include_router(followups.router)
 app.include_router(public.router)
 app.include_router(conversations.router)
 app.include_router(customers.router)
+app.include_router(qualification.router)
+app.include_router(webhooks_whatsapp.router)
 
 
 @app.get("/health", tags=["System"])

@@ -55,7 +55,7 @@ class FollowUpProcessor:
         batch_size: int = 50,
     ) -> list[uuid.UUID]:
         """Claim due PENDING and stale PROCESSING followups in a dedicated, short-lived transaction.
-        
+
         Uses SELECT ... FOR UPDATE SKIP LOCKED on PostgreSQL to allow multiple concurrent workers
         to claim distinct due rows without colliding.
         """
@@ -191,6 +191,7 @@ class FollowUpProcessor:
         conv: Conversation | None,
         now: datetime,
     ) -> bool:
+        now = ensure_utc(now) or datetime.now(UTC)
         channel_name = conv.channel.value.replace("_", " ").title() if conv else "Website Form"
         created_ref = ensure_utc(lead.created_at) or ensure_utc(reminder.created_at) or now
         elapsed_minutes = max(1, int((now - created_ref).total_seconds() / 60))

@@ -1,11 +1,16 @@
-from typing import Protocol
+from typing import Any, Protocol
 
-from app.schemas.ai import LeadExtractionResult
+from app.schemas.ai import LeadExtractionResult, QualificationFieldDefinition
 
 
 class AIProvider(Protocol):
     def extract_lead_information(
-        self, message: str, *, business_type: str = "GENERAL"
+        self,
+        message: str,
+        *,
+        business_type: str = "GENERAL",
+        qualification_fields: list[QualificationFieldDefinition] | None = None,
+        current_qualifications: dict[str, Any] | None = None,
     ) -> LeadExtractionResult: ...
 
     def generate_acknowledgement(

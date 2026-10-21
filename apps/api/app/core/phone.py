@@ -7,9 +7,7 @@ import phonenumbers
 logger = logging.getLogger("missed_lead_rescue.phone")
 
 
-def normalize_phone_number(
-    raw_phone: str | None, default_region: str | None = None
-) -> str | None:
+def normalize_phone_number(raw_phone: str | None, default_region: str | None = None) -> str | None:
     """Normalize phone number to E.164 format (+15125550100).
 
     Behavior:

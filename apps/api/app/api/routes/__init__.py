@@ -7,6 +7,8 @@ from app.api.routes import (
     leads,
     organizations,
     public,
+    qualification,
+    webhooks_whatsapp,
 )
 
 __all__ = [
@@ -18,4 +20,6 @@ __all__ = [
     "leads",
     "organizations",
     "public",
+    "qualification",
+    "webhooks_whatsapp",
 ]

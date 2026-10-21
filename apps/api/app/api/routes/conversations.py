@@ -11,10 +11,12 @@ from app.schemas.conversation import (
     ConversationListResponse,
     ConversationMessageCreate,
     ConversationMessageResponse,
+    ConversationReplyCreate,
     ConversationResponse,
 )
 from app.schemas.customer import CustomerResponse
 from app.services.conversation import ConversationService
+from app.services.outbound_messaging import OutboundChannelService
 
 router = APIRouter(prefix="/conversations", tags=["Conversations"])
 
@@ -119,3 +121,33 @@ def send_conversation_message(
     db.commit()
     db.refresh(msg)
     return ConversationMessageResponse.model_validate(msg)
+
+
+@router.post(
+    "/{conversation_id}/reply",
+    response_model=ConversationMessageResponse,
+    status_code=201,
+)
+def reply_to_conversation(
+    conversation_id: uuid.UUID,
+    payload: ConversationReplyCreate,
+    db: DbSession,
+    organization: CurrentOrganization,
+) -> ConversationMessageResponse:
+    service = ConversationService(db)
+    conv = service.get(organization.id, conversation_id)
+    if not conv:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+
+    outbound_service = OutboundChannelService(db)
+    try:
+        msg = outbound_service.send_owner_reply(
+            organization=organization,
+            conversation=conv,
+            body=payload.body,
+        )
+        return ConversationMessageResponse.model_validate(msg)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc

@@ -205,9 +205,7 @@ def test_acknowledgement_failure_does_not_discard_lead(
     assert LeadEventType.ACKNOWLEDGEMENT_FAILED in event_types
 
 
-def test_unconfigured_email_provider_is_non_fatal(
-    db: Session, account: dict[str, object]
-) -> None:
+def test_unconfigured_email_provider_is_non_fatal(db: Session, account: dict[str, object]) -> None:
     organization_id = uuid.UUID(str(account["user"]["organization_id"]))
     result = InboundLeadService(db, MockAIProvider(), UnconfiguredEmailProvider()).process(
         organization_id,

@@ -379,9 +379,7 @@ def test_scenario_g_notification_failure_triggers_retry(
     db.commit()
 
     failing_provider = RecordingNotificationProvider(should_fail=True)
-    processor = FollowUpProcessor(
-        db, notifications=NotificationService(provider=failing_provider)
-    )
+    processor = FollowUpProcessor(db, notifications=NotificationService(provider=failing_provider))
     processor.process_due(now=datetime.now(UTC))
 
     db.refresh(rem)
@@ -416,9 +414,7 @@ def test_scenario_h_max_retries_reached_marks_failed(
     db.commit()
 
     failing_provider = RecordingNotificationProvider(should_fail=True)
-    processor = FollowUpProcessor(
-        db, notifications=NotificationService(provider=failing_provider)
-    )
+    processor = FollowUpProcessor(db, notifications=NotificationService(provider=failing_provider))
     processor.process_due(now=datetime.now(UTC))
 
     db.refresh(rem)
@@ -618,9 +614,7 @@ def test_followups_api_visibility_and_manual_process(
     assert any(item["type"] == "OWNER_RESPONSE_REMINDER" for item in data["items"])
 
     # Filter by type
-    filter_type_res = client.get(
-        "/followups?type=OWNER_RESPONSE_REMINDER", headers=auth_headers
-    )
+    filter_type_res = client.get("/followups?type=OWNER_RESPONSE_REMINDER", headers=auth_headers)
     assert filter_type_res.status_code == 200
     items = filter_type_res.json()["items"]
     assert all(item["type"] == "OWNER_RESPONSE_REMINDER" for item in items)

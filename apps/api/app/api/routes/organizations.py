@@ -66,6 +66,16 @@ def integration_info(
         email_provider=provider,
         email_configured=configured,
         webhook_secret_configured=bool(organization.inbound_webhook_secret),
+        whatsapp_enabled=bool(organization.whatsapp_enabled),
+        whatsapp_configured=bool(
+            organization.whatsapp_enabled
+            and (organization.whatsapp_phone_number_id or settings.meta_whatsapp_phone_number_id)
+        ),
+        whatsapp_phone_number_id=(
+            organization.whatsapp_phone_number_id or settings.meta_whatsapp_phone_number_id
+        ),
+        whatsapp_display_phone_number=organization.whatsapp_display_phone_number,
+        whatsapp_webhook_url=f"{api_url}/webhooks/whatsapp",
     )
 
 
